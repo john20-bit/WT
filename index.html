@@ -1,82 +1,9 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-    <title>Book Store - Login</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            background: linear-gradient(135deg, #f5f7fa, #c3cfe2);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-            margin: 0;
-        }
-        .login-container {
-            background: white;
-            padding: 30px;
-            border-radius: 12px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
-            width: 100%;
-            max-width: 400px;
-        }
-        h2 {
-            text-align: center;
-            margin-bottom: 20px;
-        }
-        label {
-            font-weight: bold;
-            display: block;
-            margin-top: 10px;
-        }
-        input {
-            width: 100%;
-            padding: 10px;
-            margin-top: 5px;
-            border-radius: 8px;
-            border: 1px solid #ccc;
-        }
-        button {
-            width: 100%;
-            padding: 10px;
-            margin-top: 20px;
-            background: #4CAF50;
-            color: white;
-            font-size: 16px;
-            border: none;
-            border-radius: 8px;
-            cursor: pointer;
-        }
-        button:hover {
-            background: #45a049;
-        }
-    </style>
-</head>
-<body>
-
-<div class="login-container">
-    <h2>Login / Sign Up</h2>
-    <form action="bookstore.html" method="POST">
-        <label for="name">Full Name</label>
-        <input type="text" id="name" name="name" placeholder="John Doe" required>
-
-        <label for="email">Email Address</label>
-        <input type="email" id="email" name="email" placeholder="you@example.com" required>
-
-        <label for="password">Password</label>
-        <input type="password" id="password" name="password" minlength="6" required>
-
-        <label for="dob">Date of Birth</label>
-        <input type="date" id="dob" name="dob" required>
-
-        <button type="submit">Login</button>
-    </form>
-</div>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title> Book Online Store </title>
+  <title>  Book Store with Ratings</title>
   <style>
     :root {
       --bg: #0f172a; /* slate-900 */
@@ -190,7 +117,7 @@
       <div class="topbar">
         <div class="brand">
           <div class="logo" aria-hidden="true">📚</div>
-          <h1>S&A-Book Center</h1>
+          <h1>Leaf & Ledger</h1>
         </div>
         <button id="cartButton" class="iconbtn" title="Open cart" aria-label="Open cart">🛒 <span id="cartCount" class="pill">0</span></button>
         <button id="clearAll" class="iconbtn secondary" title="Reset demo data">Reset</button>
