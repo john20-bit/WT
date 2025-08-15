@@ -1,0 +1,448 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Leaf & Ledger — Book Store with Ratings</title>
+  <style>
+    :root {
+      --bg: #0f172a; /* slate-900 */
+      --panel: #111827; /* gray-900 */
+      --soft: #1f2937; /* gray-800 */
+      --muted: #9ca3af; /* gray-400 */
+      --text: #e5e7eb; /* gray-200 */
+      --brand: #8b5cf6; /* violet-500 */
+      --brand-2: #22d3ee; /* cyan-400 */
+      --accent: #14b8a6; /* teal-500 */
+      --warn: #f59e0b; /* amber-500 */
+      --danger: #ef4444; /* red-500 */
+      --success: #10b981; /* emerald-500 */
+      --star: #fbbf24; /* amber-400 */
+      --shadow: 0 10px 30px rgba(0,0,0,.35), 0 1px 0 rgba(255,255,255,.02) inset;
+      --radius: 16px;
+    }
+    * { box-sizing: border-box; }
+    html, body { height: 100%; }
+    body {
+      margin: 0; font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, Noto Sans, Helvetica Neue, Arial, "Apple Color Emoji", "Segoe UI Emoji";
+      background: radial-gradient(1200px 800px at 10% -10%, rgba(139,92,246,.25), transparent 60%),
+                  radial-gradient(1000px 600px at 110% 10%, rgba(34,211,238,.2), transparent 50%),
+                  var(--bg);
+      color: var(--text);
+    }
+    header {
+      position: sticky; top: 0; z-index: 10; backdrop-filter: blur(10px);
+      background: linear-gradient(180deg, rgba(15,23,42,.9), rgba(15,23,42,.7));
+      border-bottom: 1px solid rgba(255,255,255,.06);
+    }
+    .wrap { max-width: 1200px; margin: 0 auto; padding: 16px; }
+    .topbar { display: grid; grid-template-columns: 1fr auto auto; gap: 12px; align-items: center; }
+    .brand { display: flex; gap: 12px; align-items: center; }
+    .logo { width: 40px; height: 40px; border-radius: 12px; background: linear-gradient(135deg, var(--brand), var(--brand-2)); box-shadow: var(--shadow); display: grid; place-items: center; font-weight: 800; }
+    .brand h1 { font-size: 20px; margin: 0; letter-spacing: .5px; }
+    .searchbar { display: flex; gap: 10px; }
+    .searchbar input, select {
+      background: var(--soft); border: 1px solid rgba(255,255,255,.06); color: var(--text);
+      padding: 12px 14px; border-radius: 12px; outline: none; width: 100%;
+    }
+    .searchbar input::placeholder { color: var(--muted); }
+    .iconbtn { display: inline-flex; align-items: center; gap: 8px; padding: 10px 14px; border-radius: 999px; background: var(--brand); color: white; border: none; cursor: pointer; box-shadow: var(--shadow); }
+    .iconbtn.secondary { background: var(--soft); color: var(--text); border: 1px solid rgba(255,255,255,.06); }
+    .filters { display: grid; grid-template-columns: 1fr 1fr 1fr auto; gap: 10px; margin-top: 12px; }
+
+    main .grid { display: grid; grid-template-columns: repeat(12, 1fr); gap: 16px; }
+    .sidebar { grid-column: span 3; }
+    .content { grid-column: span 9; }
+
+    @media (max-width: 960px) {
+      .topbar { grid-template-columns: 1fr auto; grid-auto-rows: auto; }
+      .filters { grid-template-columns: 1fr 1fr; }
+      main .grid { grid-template-columns: 1fr; }
+      .sidebar, .content { grid-column: span 1; }
+    }
+
+    .panel {
+      background: rgba(17,24,39,.8); border: 1px solid rgba(255,255,255,.06); border-radius: var(--radius);
+      box-shadow: var(--shadow);
+    }
+    .panel .head { padding: 12px 16px; border-bottom: 1px solid rgba(255,255,255,.06); display: flex; align-items: center; justify-content: space-between; }
+    .panel .body { padding: 16px; }
+
+    .bookgrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 16px; }
+
+    .book {
+      display: grid; grid-template-rows: 240px auto; gap: 10px; padding: 12px; border-radius: 14px;
+      background: linear-gradient(180deg, rgba(31,41,55,.9), rgba(17,24,39,.9));
+      border: 1px solid rgba(255,255,255,.06);
+    }
+    .cover { border-radius: 12px; overflow: hidden; background: linear-gradient(135deg, rgba(139,92,246,.2), rgba(34,211,238,.2)); display: grid; place-items: center; }
+    .cover img { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .meta { display: grid; gap: 8px; }
+    .title { font-weight: 700; }
+    .author { font-size: 14px; color: var(--muted); }
+    .price { font-weight: 700; }
+    .tags { display: flex; flex-wrap: wrap; gap: 6px; }
+    .tag { font-size: 12px; background: rgba(255,255,255,.06); padding: 6px 10px; border-radius: 999px; color: #c7d2fe; border: 1px solid rgba(255,255,255,.06); }
+
+    .actions { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+    .addbtn { padding: 10px 12px; border-radius: 10px; border: none; background: var(--accent); color: white; cursor: pointer; }
+
+    .stars { display: inline-flex; gap: 3px; cursor: pointer; user-select: none; }
+    .star { width: 20px; height: 20px; display: inline-block; mask: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 .587l3.668 7.431 8.2 1.192-5.934 5.787 1.402 8.168L12 18.897l-7.336 3.868 1.402-8.168L.132 9.21l8.2-1.192z"/></svg>') no-repeat center / contain; background: #374151; }
+    .star.filled { background: var(--star); }
+
+    .cart-fab { position: fixed; right: 16px; bottom: 16px; z-index: 20; }
+
+    .drawer { position: fixed; inset: 0; display: none; }
+    .drawer.open { display: block; }
+    .drawer .overlay { position: absolute; inset: 0; background: rgba(0,0,0,.5); }
+    .drawer .panel { position: absolute; right: 0; top: 0; height: 100%; width: min(520px, 100%); background: var(--panel); display: grid; grid-template-rows: auto 1fr auto; }
+
+    .cartlist { display: grid; gap: 12px; }
+    .cartitem { display: grid; grid-template-columns: 56px 1fr auto; gap: 10px; align-items: center; padding: 10px; background: var(--soft); border-radius: 12px; }
+    .qty { display: inline-flex; gap: 6px; align-items: center; background: rgba(255,255,255,.06); padding: 6px 8px; border-radius: 999px; }
+    .qty button { background: transparent; border: none; color: var(--text); font-size: 18px; cursor: pointer; }
+
+    .notice { font-size: 13px; color: var(--muted); }
+    .empty { text-align: center; padding: 40px 0; color: var(--muted); }
+    .footer { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+    .checkout { background: linear-gradient(90deg, var(--brand), var(--brand-2)); border: none; color: white; padding: 12px 16px; border-radius: 12px; font-weight: 700; cursor: pointer; }
+
+    .pill { font-size: 12px; padding: 6px 10px; border-radius: 999px; background: rgba(255,255,255,.06); border: 1px solid rgba(255,255,255,.06); }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="wrap">
+      <div class="topbar">
+        <div class="brand">
+          <div class="logo" aria-hidden="true">📚</div>
+          <h1>Leaf & Ledger</h1>
+        </div>
+        <button id="cartButton" class="iconbtn" title="Open cart" aria-label="Open cart">🛒 <span id="cartCount" class="pill">0</span></button>
+        <button id="clearAll" class="iconbtn secondary" title="Reset demo data">Reset</button>
+      </div>
+      <div class="filters">
+        <div class="searchbar">
+          <input id="search" type="search" placeholder="Search books, authors, ISBN…" />
+        </div>
+        <select id="category">
+          <option value="">All categories</option>
+        </select>
+        <select id="sort">
+          <option value="relevance">Sort: Relevance</option>
+          <option value="price-asc">Price: Low → High</option>
+          <option value="price-desc">Price: High → Low</option>
+          <option value="rating-desc">Rating: High → Low</option>
+          <option value="title-asc">Title: A → Z</option>
+        </select>
+        <button id="applyFilters" class="iconbtn secondary">Apply</button>
+      </div>
+    </div>
+  </header>
+
+  <main class="wrap">
+    <div class="grid">
+      <aside class="sidebar">
+        <div class="panel">
+          <div class="head"><strong>Highlights</strong><span class="pill" id="resultCount">0 results</span></div>
+          <div class="body">
+            <div class="notice">Click the stars on any book to rate it. Ratings and your cart are stored in your browser (localStorage) for this demo.</div>
+          </div>
+        </div>
+      </aside>
+      <section class="content">
+        <div class="panel">
+          <div class="head"><strong>Catalog</strong><span class="pill">Demo</span></div>
+          <div class="body">
+            <div id="bookGrid" class="bookgrid" aria-live="polite"></div>
+          </div>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <!-- Floating Cart Button -->
+  <div class="cart-fab">
+    <button id="fabCart" class="iconbtn" title="Open cart" aria-label="Open cart">🛒 <span id="cartCountFab" class="pill">0</span></button>
+  </div>
+
+  <!-- Cart Drawer -->
+  <div id="drawer" class="drawer" aria-hidden="true" aria-label="Shopping cart">
+    <div class="overlay" data-close></div>
+    <div class="panel">
+      <div class="head">
+        <strong>Shopping Cart</strong>
+        <button class="iconbtn secondary" data-close>Close</button>
+      </div>
+      <div class="body">
+        <div id="cartList" class="cartlist"></div>
+        <div id="cartEmpty" class="empty">Your cart is empty.</div>
+      </div>
+      <div class="body footer">
+        <div>
+          <div><strong>Subtotal: ₹<span id="subtotal">0.00</span></strong></div>
+          <div class="notice">Taxes & shipping calculated at checkout (demo only).</div>
+        </div>
+        <button id="checkout" class="checkout">Proceed to Checkout</button>
+      </div>
+    </div>
+  </div>
+
+  <template id="svgCoverTemplate">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 560" width="400" height="560">
+      <defs>
+        <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0%" stop-color="#8b5cf6"/>
+          <stop offset="100%" stop-color="#22d3ee"/>
+        </linearGradient>
+      </defs>
+      <rect width="100%" height="100%" fill="#0b1020"/>
+      <rect x="20" y="20" width="360" height="520" rx="16" fill="url(#g)" opacity="0.25"/>
+      <text x="200" y="260" text-anchor="middle" font-family="Inter, system-ui" font-size="28" fill="#e5e7eb">BOOK</text>
+      <text x="200" y="305" text-anchor="middle" font-family="Inter, system-ui" font-size="16" fill="#cbd5e1">COVER</text>
+    </svg>
+  </template>
+
+  <script>
+    // --- Demo Data -----------------------------------------------------------
+    const books = [
+      { id: 'bk001', title: 'The Midnight Library', author: 'Matt Haig', price: 399, category: 'Fiction', tags: ['Bestseller','Life Choices'], rating: { avg: 4.3, count: 1203 } },
+      { id: 'bk002', title: 'Atomic Habits', author: 'James Clear', price: 499, category: 'Self-Help', tags: ['Habits','Productivity'], rating: { avg: 4.7, count: 4321 } },
+      { id: 'bk003', title: 'Educated', author: 'Tara Westover', price: 359, category: 'Memoir', tags: ['Inspiring'], rating: { avg: 4.6, count: 2876 } },
+      { id: 'bk004', title: 'The Pragmatic Programmer', author: 'Andrew Hunt & David Thomas', price: 899, category: 'Technology', tags: ['Programming'], rating: { avg: 4.8, count: 2510 } },
+      { id: 'bk005', title: 'Sapiens: A Brief History of Humankind', author: 'Yuval Noah Harari', price: 549, category: 'History', tags: ['Anthropology'], rating: { avg: 4.5, count: 6933 } },
+      { id: 'bk006', title: 'The Psychology of Money', author: 'Morgan Housel', price: 329, category: 'Finance', tags: ['Money','Behavior'], rating: { avg: 4.6, count: 3450 } },
+      { id: 'bk007', title: 'Ikigai', author: 'Héctor García & Francesc Miralles', price: 299, category: 'Self-Help', tags: ['Japanese','Purpose'], rating: { avg: 4.2, count: 5120 } },
+      { id: 'bk008', title: 'Project Hail Mary', author: 'Andy Weir', price: 449, category: 'Science Fiction', tags: ['Space','Adventure'], rating: { avg: 4.7, count: 1987 } },
+      { id: 'bk009', title: 'The Alchemist', author: 'Paulo Coelho', price: 269, category: 'Fiction', tags: ['Fable','Journey'], rating: { avg: 4.1, count: 11234 } },
+      { id: 'bk010', title: 'Clean Code', author: 'Robert C. Martin', price: 999, category: 'Technology', tags: ['Software'], rating: { avg: 4.4, count: 10010 } },
+    ];
+
+    // Generate inline SVG cover as data URL (no external requests)
+    function makeCoverDataURL() {
+      const tpl = document.getElementById('svgCoverTemplate');
+      return 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(tpl.innerHTML.trim());
+    }
+
+    // --- State --------------------------------------------------------------
+    const state = {
+      q: '',
+      category: '',
+      sort: 'relevance',
+      cart: load('cart', {}),
+      userRatings: load('userRatings', {}),
+    };
+
+    // --- Utilities ----------------------------------------------------------
+    function save(key, value){ localStorage.setItem('leafledger:'+key, JSON.stringify(value)); }
+    function load(key, fallback){ try { return JSON.parse(localStorage.getItem('leafledger:'+key)) || fallback; } catch { return fallback; } }
+    function formatRs(x){ return x.toFixed(2); }
+
+    function computeDisplayRating(b){
+      const ur = state.userRatings[b.id];
+      if (!ur) return { avg: b.rating.avg, count: b.rating.count };
+      // If the user rated, treat as an additional vote (if not previously counted)
+      // We store also whether counted; if user changes rating later, adjust average without changing count again
+      const base = { avg: b.rating.avg, count: b.rating.count };
+      if (!ur.counted) {
+        const newAvg = (base.avg * base.count + ur.value) / (base.count + 1);
+        return { avg: newAvg, count: base.count + 1 };
+      } else {
+        const newAvg = (base.avg * base.count - ur.prev + ur.value) / base.count;
+        return { avg: newAvg, count: base.count };
+      }
+    }
+
+    function setUserRating(bookId, stars){
+      const current = state.userRatings[bookId];
+      if (!current) {
+        state.userRatings[bookId] = { value: stars, counted: false };
+      } else {
+        state.userRatings[bookId] = { value: stars, counted: current.counted, prev: current.value };
+      }
+      save('userRatings', state.userRatings);
+      render();
+      // After first render with rating, mark as counted so subsequent edits don't re-increment
+      if (!current) {
+        state.userRatings[bookId].counted = true;
+        state.userRatings[bookId].prev = stars;
+        save('userRatings', state.userRatings);
+      }
+    }
+
+    function addToCart(id){
+      state.cart[id] = (state.cart[id] || 0) + 1;
+      save('cart', state.cart);
+      updateCartBadges();
+      renderCart();
+    }
+    function removeFromCart(id){
+      delete state.cart[id]; save('cart', state.cart); updateCartBadges(); renderCart();
+    }
+    function changeQty(id, delta){
+      state.cart[id] = Math.max(1, (state.cart[id] || 1) + delta);
+      save('cart', state.cart); updateCartBadges(); renderCart();
+    }
+    function cartCount(){ return Object.values(state.cart).reduce((a,b)=>a+b,0); }
+
+    // --- Rendering ----------------------------------------------------------
+    function renderFilters(){
+      // Categories
+      const sel = document.getElementById('category');
+      const cats = [''].concat([...new Set(books.map(b=>b.category))]);
+      sel.innerHTML = cats.map(c=>`<option value="${c}">${c || 'All categories'}</option>`).join('');
+      sel.value = state.category;
+    }
+
+    function matches(b){
+      const q = state.q.trim().toLowerCase();
+      const inQ = !q || [b.title, b.author, b.id, ...(b.tags||[]), b.category].join(' ').toLowerCase().includes(q);
+      const inC = !state.category || b.category === state.category;
+      return inQ && inC;
+    }
+
+    function sortBooks(list){
+      const s = state.sort;
+      const arr = [...list];
+      if (s === 'price-asc') arr.sort((a,b)=>a.price-b.price);
+      else if (s === 'price-desc') arr.sort((a,b)=>b.price-a.price);
+      else if (s === 'rating-desc') arr.sort((a,b)=>computeDisplayRating(b).avg - computeDisplayRating(a).avg);
+      else if (s === 'title-asc') arr.sort((a,b)=>a.title.localeCompare(b.title));
+      return arr;
+    }
+
+    function makeStars(book, ratingInfo){
+      const user = state.userRatings[book.id]?.value || 0;
+      const container = document.createElement('div');
+      container.className = 'stars';
+      for (let i=1;i<=5;i++){
+        const s = document.createElement('span');
+        s.className = 'star' + (i <= Math.round(user || ratingInfo.avg) ? ' filled' : '');
+        s.title = `Rate ${i} star${i>1?'s':''}`;
+        s.setAttribute('role','button'); s.setAttribute('aria-label', s.title);
+        s.addEventListener('mouseenter', ()=>{
+          [...container.children].forEach((el,idx)=>{ el.classList.toggle('filled', idx < i); });
+        });
+        s.addEventListener('mouseleave', ()=>{
+          [...container.children].forEach((el,idx)=>{ el.classList.toggle('filled', idx < Math.round(user || ratingInfo.avg)); });
+        });
+        s.addEventListener('click', ()=> setUserRating(book.id, i));
+        container.appendChild(s);
+      }
+      return container;
+    }
+
+    function bookCard(b){
+      const rating = computeDisplayRating(b);
+      const wrap = document.createElement('div');
+      wrap.className = 'book';
+      wrap.innerHTML = `
+        <div class="cover"><img alt="${b.title} cover" loading="lazy" src="${makeCoverDataURL()}" /></div>
+        <div class="meta">
+          <div class="title">${b.title}</div>
+          <div class="author">by ${b.author}</div>
+          <div class="tags">${(b.tags||[]).map(t=>`<span class='tag'>${t}</span>`).join('')}</div>
+          <div class="actions">
+            <div>
+              <div class="notice">Avg ${rating.avg.toFixed(1)} · ${rating.count.toLocaleString()} ratings</div>
+            </div>
+            <div class="price">₹${b.price}</div>
+          </div>
+          <div class="actions">
+            <div class="rate"></div>
+            <button class="addbtn">Add to cart</button>
+          </div>
+        </div>`;
+      wrap.querySelector('.addbtn').addEventListener('click', ()=> addToCart(b.id));
+      wrap.querySelector('.rate').appendChild(makeStars(b, rating));
+      return wrap;
+    }
+
+    function render(){
+      const grid = document.getElementById('bookGrid');
+      const filtered = sortBooks(books.filter(matches));
+      grid.innerHTML = '';
+      filtered.forEach(b=> grid.appendChild(bookCard(b)));
+      document.getElementById('resultCount').textContent = `${filtered.length} result${filtered.length!==1?'s':''}`;
+    }
+
+    function updateCartBadges(){
+      const count = cartCount();
+      document.getElementById('cartCount').textContent = count;
+      document.getElementById('cartCountFab').textContent = count;
+    }
+
+    function renderCart(){
+      const list = document.getElementById('cartList');
+      const empty = document.getElementById('cartEmpty');
+      list.innerHTML = '';
+      let total = 0;
+      const ids = Object.keys(state.cart);
+      if (ids.length === 0){ empty.style.display = 'block'; } else { empty.style.display = 'none'; }
+      ids.forEach(id=>{
+        const book = books.find(b=>b.id===id);
+        if (!book) return;
+        const qty = state.cart[id];
+        const itemTotal = qty * book.price; total += itemTotal;
+        const row = document.createElement('div');
+        row.className = 'cartitem';
+        row.innerHTML = `
+          <div class="cover"><img alt="${book.title} cover" src="${makeCoverDataURL()}"/></div>
+          <div>
+            <div class="title">${book.title}</div>
+            <div class="author">${book.author}</div>
+            <div class="notice">₹${book.price} each</div>
+          </div>
+          <div style="text-align:right;">
+            <div class="qty">
+             <button aria-label="Decrease" title="Decrease" onclick="changeQty('${id}', -1)">−</button>
+              <span>${qty}</span>
+              <button aria-label="Increase" title="Increase" onclick="changeQty('${id}', 1)">+</button>
+            </div>
+            <div style="margin-top:8px; font-weight:700;">₹${itemTotal}</div>
+            <button class="iconbtn secondary" style="margin-top:8px;" onclick="removeFromCart('${id}')">Remove</button>
+          </div>`;
+        list.appendChild(row);
+      });
+      document.getElementById('subtotal').textContent = formatRs(total);
+    }
+
+    // --- Drawer -------------------------------------------------------------
+    const drawer = document.getElementById('drawer');
+    function openDrawer(){ drawer.classList.add('open'); drawer.setAttribute('aria-hidden','false'); }
+    function closeDrawer(){ drawer.classList.remove('open'); drawer.setAttribute('aria-hidden','true'); }
+
+    // --- Events -------------------------------------------------------------
+    document.getElementById('search').addEventListener('input', (e)=>{ state.q = e.target.value; render(); });
+    document.getElementById('category').addEventListener('change', (e)=>{ state.category = e.target.value; render(); });
+    document.getElementById('sort').addEventListener('change', (e)=>{ state.sort = e.target.value; render(); });
+    document.getElementById('applyFilters').addEventListener('click', ()=> render());
+
+    document.getElementById('cartButton').addEventListener('click', openDrawer);
+    document.getElementById('fabCart').addEventListener('click', openDrawer);
+    drawer.querySelectorAll('[data-close]').forEach(el=> el.addEventListener('click', closeDrawer));
+
+    document.getElementById('checkout').addEventListener('click', ()=>{
+      if (cartCount() === 0) return alert('Your cart is empty.');
+      alert('Demo checkout — integrate your payment gateway here.');
+    });
+
+    document.getElementById('clearAll').addEventListener('click', ()=>{
+      if (confirm('Reset cart and ratings?')){
+        localStorage.removeItem('leafledger:cart');
+        localStorage.removeItem('leafledger:userRatings');
+        state.cart = {}; state.userRatings = {}; updateCartBadges(); renderCart(); render();
+      }
+    });
+
+    // --- Init ----------------------------------------------------------------
+    renderFilters();
+    render();
+    renderCart();
+    updateCartBadges();
+    window.changeQty = changeQty; // expose for inline handlers
+    window.removeFromCart = removeFromCart;
+  </script>
+</body>
+</html>
